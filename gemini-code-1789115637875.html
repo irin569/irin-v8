@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GameShop OS - ระบบจัดการคลังสินค้าหลายเกม</title>
+  <style>
+    :root {
+      --bg-dark: #0f172a;
+      --card-bg: #1e293b;
+      --accent-red: #ff4757;
+      --accent-green: #2ed573;
+      --accent-blue: #3b82f6;
+      --accent-purple: #a855f7;
+      --text-main: #f8fafc;
+      --text-sub: #94a3b8;
+      --border-color: #334155;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Sukhumvit Set', 'Kanit', Tahoma, sans-serif; }
+    body { background-color: var(--bg-dark); color: var(--text-main); padding-bottom: 3rem; }
+
+    header {
+      background: var(--card-bg);
+      border-bottom: 2px solid var(--accent-red);
+      position: sticky; top: 0; z-index: 100;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+    }
+
+    .nav-container {
+      max-width: 1300px; margin: 0 auto; padding: 0.8rem 1rem;
+      display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;
+    }
+
+    .logo { font-size: 1.5rem; font-weight: bold; color: #fff; }
+    .logo span { color: var(--accent-red); }
+
+    .nav-tabs { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+    .nav-tab-btn {
+      background: transparent; border: 1px solid var(--border-color); color: var(--text-sub);
+      padding: 0.5rem 1rem; border-radius: 8px; cursor: pointer; font-weight: bold; transition: all 0.2s;
+    }
+    .nav-tab-btn.active, .nav-tab-btn:hover { background: var(--accent-red); color: #fff; border-color: var(--accent-red); }
+    .btn-add-game { background: var(--accent-purple); color: #fff; border-color: var(--accent-purple); }
+
+    .search-box { flex: 1; max-width: 300px; }
+    .search-box input {
+      width: 100%; padding: 0.5rem 1rem; border-radius: 20px;
+      border: 1px solid var(--border-color); background-color: var(--bg-dark); color: #fff; font-size: 0.9rem; outline: none;
+    }
+
+    .view-section { display: none; }
+    .view-section.active { display: block; }
+    .container { max-width: 1300px; margin: 1.5rem auto; padding: 0 1rem; }
+
+    .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.2rem; margin-bottom: 2rem; }
+    .stat-card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; padding: 1.2rem; display: flex; flex-direction: column; gap: 0.5rem; }
+    .stat-card .title { font-size: 0.9rem; color: var(--text-sub); }
+    .stat-card .value { font-size: 1.8rem; font-weight: bold; color: #fff; }
+    .stat-card .sub { font-size: 0.8rem; color: var(--accent-green); }
+
+    .dash-charts { display: grid; grid-template-columns: 2fr 1fr; gap: 1.5rem; margin-bottom: 2rem; }
+    @media (max-width: 900px) { .dash-charts { grid-template-columns: 1fr; } }
+    .chart-card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; padding: 1.5rem; }
+    .chart-card h3 { margin-bottom: 1rem; font-size: 1.1rem; color: var(--text-main); }
+
+    .custom-table { width: 100%; border-collapse: collapse; margin-top: 1rem; font-size: 0.9rem; }
+    .custom-table th, .custom-table td { padding: 0.8rem 1rem; text-align: left; border-bottom: 1px solid var(--border-color); }
+    .custom-table th { background: rgba(15, 23, 42, 0.6); color: var(--text-sub); }
+
+    .filter-buttons { display: flex; gap: 0.5rem; overflow-x: auto; padding-bottom: 1rem; margin-bottom: 1.5rem; }
+    .filter-btn { background-color: var(--card-bg); color: var(--text-sub); border: 1px solid var(--border-color); padding: 0.5rem 1.2rem; border-radius: 20px; cursor: pointer; font-weight: bold; white-space: nowrap; }
+    .filter-btn.active, .filter-btn:hover { background-color: var(--accent-red); color: white; border-color: var(--accent-red); }
+
+    .product-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; }
+    .card { background: var(--card-bg); border-radius: 12px; padding: 1.2rem; border: 1px solid var(--border-color); display: flex; flex-direction: column; justify-content: space-between; position: relative; }
+    .card img { width: 100%; height: 160px; object-fit: cover; border-radius: 8px; margin-bottom: 0.8rem; }
+    .card .id-code { font-size: 0.8rem; color: var(--text-sub); font-family: monospace; display: flex; justify-content: space-between; }
+    .card .game-tag { background: rgba(59, 130, 246, 0.2); color: var(--accent-blue); padding: 2px 6px; border-radius: 4px; font-size: 0.75rem; text-transform: uppercase; }
+    
+    .card-inputs { display: flex; flex-direction: column; gap: 0.5rem; margin: 0.8rem 0; }
+    .card-inputs input, .card-inputs textarea, .card-inputs select { background: var(--bg-dark); border: 1px solid var(--border-color); color: #fff; padding: 0.4rem 0.6rem; border-radius: 6px; font-size: 0.85rem; }
+    .price-row { display: flex; justify-content: space-between; align-items: center; margin: 0.8rem 0; }
+
+    .btn-buy-group { display: flex; gap: 0.5rem; }
+    .btn-action { flex: 1; padding: 0.6rem; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; color: white; }
+    .btn-cash { background-color: #059669; }
+    .btn-qr { background-color: var(--accent-blue); }
+    .btn-delete { background: rgba(255, 71, 87, 0.2); color: var(--accent-red); border: 1px solid var(--accent-red); padding: 2px 8px; border-radius: 4px; cursor: pointer; font-size: 0.75rem; margin-top: 4px; }
+
+    .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; justify-content: center; align-items: center; }
+    .modal-content { background: var(--card-bg); padding: 2rem; border-radius: 12px; max-width: 420px; width: 90%; text-align: center; border: 1px solid var(--border-color); }
+    .qr-img { width: 220px; height: 220px; margin: 1rem auto; border-radius: 8px; border: 4px solid #fff; }
+    .modal-btn-close { background: var(--border-color); color: #fff; border: none; padding: 0.6rem 1.5rem; border-radius: 6px; cursor: pointer; margin-top: 1rem; }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="nav-container">
+      <div class="logo">🎮 Game<span>Shop OS</span></div>
+      <div class="nav-tabs">
+        <button class="nav-tab-btn active" onclick="switchView('store', this)">🏪 คลังสินค้า & ขาย</button>
+        <button class="nav-tab-btn" onclick="switchView('dashboard', this)">📊 แดชบอร์ด</button>
+        <button class="nav-tab-btn btn-add-game" onclick="openAddProductModal()">➕ เพิ่มสินค้าใหม่</button>
+      </div>
+      <div class="search-box">
+        <input type="text" id="searchInput" onkeyup="searchProducts()" placeholder="ค้นหารหัส, เกม, ชื่อไอดี...">
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <section id="storeView" class="view-section active">
+      <div class="filter-buttons" id="filterContainer">
+        <button class="filter-btn active" onclick="filterGame('all', this)">ทั้งหมด</button>
+        <button class="filter-btn" onclick="filterGame('rov', this)">ROV</button>
+        <button class="filter-btn" onclick="filterGame('valorant', this)">Valorant</button>
+        <button class="filter-btn" onclick="filterGame('genshin', this)">Genshin</button>
+        <button class="filter-btn" onclick="filterGame('roblox', this)">Roblox</button>
+        <button class="filter-btn" onclick="filterGame('fcmobile', this)">FC Mobile</button>
+        <button class="filter-btn" onclick="filterGame('freefire', this)">Free Fire</button>
+        <button class="filter-btn" onclick="filterGame('hsr', this)">Honkai: Star Rail</button>
+        <button class="filter-btn" onclick="filterGame('pubg', this)">PUBG Mobile</button>
+      </div>
+      <div class="product-grid" id="productGrid"></div>
+    </section>
+
+    <section id="dashboardView" class="view-section">
+      <div class="dashboard-grid">
+        <div class="stat-card">
+          <span class="title">💵 ยอดขายรวม</span>
+          <span class="value" id="dashTotalSales">฿0</span>
+          <span class="sub">บันทึกข้อมูลอัตโนมัติ</span>
+        </div>
+        <div class="stat-card">
+          <span class="title">💵 ชำระเงินสด</span>
+          <span class="value" id="dashCashSales">฿0</span>
+          <span class="sub" style="color:#10b981;" id="dashCashCount">0 รายการ</span>
+        </div>
+        <div class="stat-card">
+          <span class="title">📲 ชำระ QR Code</span>
+          <span class="value" id="dashQrSales">฿0</span>
+          <span class="sub" style="color:#3b82f6;" id="dashQrCount">0 รายการ</span>
+        </div>
+        <div class="stat-card">
+          <span class="title">📦 สินค้าพร้อมขาย</span>
+          <span class="value" id="dashTotalItems">0 รายการ</span>
+          <span class="sub" style="color:#f59e0b;">ในระบบ</span>
+        </div>
+      </div>
+
+      <div class="dash-charts">
+        <div class="chart-card">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <h3>📜 ประวัติการขายล่าสุด</h3>
+            <button class="btn-delete" onclick="resetSystemData()">⚠️ ล้างข้อมูลทั้งหมด</button>
+          </div>
+          <table class="custom-table">
+            <thead>
+              <tr><th>เวลา</th><th>รหัส</th><th>ชื่อสินค้า</th><th>ชำระด้วย</th><th>ราคา</th></tr>
+            </thead>
+            <tbody id="salesHistoryTable"></tbody>
+          </table>
+        </div>
+        <div class="chart-card">
+          <h3>📊 สัดส่วนช่องทางชำระเงิน</h3>
+          <p id="paymentRatioText" style="text-align:center; padding:2rem; color:var(--text-sub);">รอข้อมูลการขาย...</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div class="modal" id="paymentModal">
+    <div class="modal-content">
+      <h2 id="modalTitle">ชำระเงิน</h2>
+      <p id="modalSub" style="color: var(--text-sub); margin-bottom: 0.5rem;"></p>
+      <div id="modalBody"></div>
+      <button class="modal-btn-close" onclick="closeModal('paymentModal')">ปิดหน้าต่าง</button>
+    </div>
+  </div>
+
+  <div class="modal" id="addProductModal">
+    <div class="modal-content" style="text-align: left;">
+      <h2 style="text-align: center; margin-bottom: 1rem;">➕ เพิ่มไอดีเกมเข้าคลัง</h2>
+      <div class="card-inputs">
+        <label style="color:var(--text-sub); font-size:0.8rem;">หมวดหมู่เกม:</label>
+        <select id="newGameCategory">
+          <option value="rov">ROV</option>
+          <option value="valorant">Valorant</option>
+          <option value="genshin">Genshin Impact</option>
+          <option value="roblox">Roblox</option>
+          <option value="fcmobile">FC Mobile</option>
+          <option value="freefire">Free Fire</option>
+          <option value="hsr">Honkai: Star Rail</option>
+          <option value="pubg">PUBG Mobile</option>
+        </select>
+        
+        <label style="color:var(--text-sub); font-size:0.8rem;">รหัสไอดี (ID Code):</label>
+        <input type="text" id="newGameId" placeholder="เช่น #ROV003">
+
+        <label style="color:var(--text-sub); font-size:0.8rem;">ชื่อสินค้า:</label>
+        <input type="text" id="newGameName" placeholder="เช่น ID ROV สกินเทพ">
+
+        <label style="color:var(--text-sub); font-size:0.8rem;">รายละเอียด:</label>
+        <textarea id="newGameDesc" rows="2" placeholder="รายละเอียดของไอดี..."></textarea>
+
+        <label style="color:var(--text-sub); font-size:0.8rem;">ราคา (บาท):</label>
+        <input type="number" id="newGamePrice" placeholder="เช่น 1500">
+      </div>
+      <button class="btn-action btn-cash" style="width:100%; margin-top:1rem;" onclick="addNewProduct()">💾 บันทึกเข้าคลัง</button>
+      <button class="modal-btn-close" style="width:100%;" onclick="closeModal('addProductModal')">ยกเลิก</button>
+    </div>
+  </div>
+
+  <script>
+    const defaultProducts = [
+      { id: '#ROV001', category: 'rov', name: 'ID ROV - Glorious 50 Stars', desc: 'สกินครบ 250+ ตัว', price: 4500, img: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=500&q=80', status: 'available' },
+      { id: '#VAL001', category: 'valorant', name: 'ID Valorant - VCT Knife Set', desc: 'มีด VCT + Kuronami Vandal', price: 5500, img: 'https://images.unsplash.com/photo-1511512578047-dfb367046420?w=500&q=80', status: 'available' },
+      { id: '#GI001', category: 'genshin', name: 'ID Genshin - AR60 C6R5', desc: 'ตัวละคร 5 ดาว 35 ตัว', price: 6800, img: 'https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?w=500&q=80', status: 'available' },
+      { id: '#RB001', category: 'roblox', name: 'ID Roblox - Blox Fruits Max', desc: 'หมัดดราก้อน V2, ดาบคู่ทรู', price: 850, img: 'https://images.unsplash.com/photo-1612287230202-1ff1d85d1bdf?w=500&q=80', status: 'available' }
+    ];
+
+    let products = JSON.parse(localStorage.getItem('gs_products')) || defaultProducts;
+    let salesHistory = JSON.parse(localStorage.getItem('gs_sales')) || [];
+
+    function saveData() {
+      localStorage.setItem('gs_products', JSON.stringify(products));
+      localStorage.setItem('gs_sales', JSON.stringify(salesHistory));
+    }
+
+    function renderProducts() {
+      const grid = document.getElementById('productGrid');
+      grid.innerHTML = '';
+      products.forEach((p, index) => {
+        const isSold = p.status === 'sold';
+        grid.innerHTML += `
+          <div class="card" data-category="${p.category}" style="${isSold ? 'opacity: 0.5;' : ''}">
+            <div>
+              <img src="${p.img}">
+              <div class="id-code">
+                <span>ID: ${p.id} ${isSold ? '<b style="color:var(--accent-red);">(ขายแล้ว)</b>' : ''}</span>
+                <span class="game-tag">${p.category}</span>
+              </div>
+              <div class="card-inputs">
+                <input type="text" value="${p.name}" onchange="updateProduct(${index}, 'name', this.value)" ${isSold ? 'disabled' : ''}>
+                <textarea rows="2" onchange="updateProduct(${index}, 'desc', this.value)" ${isSold ? 'disabled' : ''}>${p.desc}</textarea>
+              </div>
+            </div>
+            <div>
+              <div class="price-row">
+                <span style="font-size:0.85rem; color:var(--text-sub);">ราคา (฿):</span>
+                <input type="number" value="${p.price}" style="width:100px; text-align:right; font-weight:bold; color:var(--accent-green);" onchange="updateProduct(${index}, 'price', parseFloat(this.value))" ${isSold ? 'disabled' : ''}>
+              </div>
+              ${!isSold ? `
+                <div class="btn-buy-group">
+                  <button class="btn-action btn-cash" onclick="openPayment(${index}, 'cash')">💵 เงินสด</button>
+                  <button class="btn-action btn-qr" onclick="openPayment(${index}, 'qr')">📲 QR Code</button>
+                </div>
+              ` : `<button class="btn-action" style="background:#334155; width:100%; cursor:not-allowed;" disabled>จำหน่ายแล้ว</button>`}
+              <button class="btn-delete" style="width:100%; margin-top:8px;" onclick="deleteProduct(${index})">🗑️ ลบออกจากคลัง</button>
+            </div>
+          </div>
+        `;
+      });
+      updateDashboardStats();
+    }
+
+    function updateProduct(index, key, value) {
+      products[index][key] = value;
+      saveData();
+      renderProducts();
+    }
+
+    function deleteProduct(index) {
+      if(confirm('คุณต้องการลบรายการนี้ใช่หรือไม่?')) {
+        products.splice(index, 1);
+        saveData();
+        renderProducts();
+      }
+    }
+
+    function switchView(viewName, btn) {
+      document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.nav-tab-btn').forEach(el => {
+        if(!el.classList.contains('btn-add-game')) el.classList.remove('active');
+      });
+      document.getElementById(viewName === 'store' ? 'storeView' : 'dashboardView').classList.add('active');
+      btn.classList.add('active');
+    }
+
+    function openPayment(index, method) {
+      const p = products[index];
+      const modal = document.getElementById('paymentModal');
+      modal.style.display = 'flex';
+      document.getElementById('modalTitle').innerText = method === 'cash' ? '💵 ชำระด้วยเงินสด' : '📲 QR Code PromptPay';
+      document.getElementById('modalSub').innerText = `${p.name} (${p.id})`;
+
+      if(method === 'cash') {
+        document.getElementById('modalBody').innerHTML = `
+          <h2 style="color:var(--accent-green); margin:1rem;">฿${p.price.toLocaleString()}</h2>
+          <button class="btn-action btn-cash" style="width:100%; font-size:1rem; padding:0.8rem;" onclick="confirmTransaction(${index}, 'เงินสด', ${p.price})">✅ ยืนยันได้รับเงินสดแล้ว</button>
+        `;
+      } else {
+        document.getElementById('modalBody').innerHTML = `
+          <h3 style="color:var(--accent-blue); margin-top:0.5rem;">฿${p.price.toLocaleString()}</h3>
+          <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=PROMPTPAY-${p.price}" class="qr-img">
+          <button class="btn-action btn-qr" style="width:100%; font-size:1rem; padding:0.8rem;" onclick="confirmTransaction(${index}, 'QR Code', ${p.price})">✅ ยืนยันชำระผ่าน QR Code</button>
+        `;
+      }
+    }
+
+    function openAddProductModal() {
+      document.getElementById('addProductModal').style.display = 'flex';
+    }
+
+    function closeModal(id) { 
+      document.getElementById(id).style.display = 'none'; 
+    }
+
+    function addNewProduct() {
+      const cat = document.getElementById('newGameCategory').value;
+      const id = document.getElementById('newGameId').value || '#' + cat.toUpperCase() + Math.floor(Math.random()*100);
+      const name = document.getElementById('newGameName').value || 'ไอดีเกมใหม่';
+      const desc = document.getElementById('newGameDesc').value || 'ไม่มีรายละเอียด';
+      const price = parseFloat(document.getElementById('newGamePrice').value) || 0;
+
+      products.unshift({
+        id: id,
+        category: cat,
+        name: name,
+        desc: desc,
+        price: price,
+        img: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=500&q=80',
+        status: 'available'
+      });
+
+      saveData();
+      closeModal('addProductModal');
+      renderProducts();
+    }
+
+    function confirmTransaction(index, method, price) {
+      products[index].status = 'sold';
+      const now = new Date();
+      salesHistory.unshift({
+        time: now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0'),
+        id: products[index].id,
+        name: products[index].name,
+        method: method,
+        price: price
+      });
+      saveData();
+      closeModal('paymentModal');
+      renderProducts();
+    }
+
+    function updateDashboardStats() {
+      let total = 0, cash = 0, qr = 0, cashCount = 0, qrCount = 0;
+      let activeItems = products.filter(p => p.status === 'available').length;
+
+      salesHistory.forEach(s => {
+        total += s.price;
+        if(s.method === 'เงินสด') { cash += s.price; cashCount++; }
+        else { qr += s.price; qrCount++; }
+      });
+
+      document.getElementById('dashTotalSales').innerText = '฿' + total.toLocaleString();
+      document.getElementById('dashCashSales').innerText = '฿' + cash.toLocaleString();
+      document.getElementById('dashCashCount').innerText = cashCount + ' รายการ';
+      document.getElementById('dashQrSales').innerText = '฿' + qr.toLocaleString();
+      document.getElementById('dashQrCount').innerText = qrCount + ' รายการ';
+      document.getElementById('dashTotalItems').innerText = activeItems + ' รายการ';
+
+      const tbody = document.getElementById('salesHistoryTable');
+      tbody.innerHTML = salesHistory.length ? '' : '<tr><td colspan="5" style="text-align:center;">ยังไม่มีประวัติการขาย</td></tr>';
+      salesHistory.forEach(s => {
+        tbody.innerHTML += `<tr><td>${s.time}</td><td><code>${s.id}</code></td><td>${s.name}</td><td><b>${s.method}</b></td><td style="color:var(--accent-green);">฿${s.price.toLocaleString()}</td></tr>`;
+      });
+
+      const ratioText = document.getElementById('paymentRatioText');
+      if(salesHistory.length > 0) {
+        ratioText.innerHTML = `เงินสด <b>${((cash/total)*100).toFixed(0)}%</b> | QR Code <b>${((qr/total)*100).toFixed(0)}%</b>`;
+      } else {
+        ratioText.innerText = 'รอข้อมูลการขาย...';
+      }
+    }
+
+    function resetSystemData() {
+      if(confirm('⚠️ คุณแน่ใจหรือไม่ว่าต้องการรีเซ็ตข้อมูลทั้งหมดกลับเป็นค่าเริ่มต้น?')) {
+        localStorage.clear();
+        products = defaultProducts;
+        salesHistory = [];
+        saveData();
+        renderProducts();
+      }
+    }
+
+    function filterGame(category, btn) {
+      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      document.querySelectorAll('.card').forEach(card => {
+        card.style.display = (category === 'all' || card.getAttribute('data-category') === category) ? 'flex' : 'none';
+      });
+    }
+
+    function searchProducts() {
+      const input = document.getElementById('searchInput').value.toLowerCase();
+      document.querySelectorAll('.card').forEach(card => {
+        card.style.display = card.innerText.toLowerCase().includes(input) ? 'flex' : 'none';
+      });
+    }
+
+    renderProducts();
+  </script>
+</body>
+</html>
